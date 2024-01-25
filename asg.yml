@@ -1,0 +1,189 @@
+AWSTemplateFormatVersion: 2010-09-09
+Resources:
+  VPC:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      CidrBlock: 10.10.0.0/16
+      Tags:
+        - Key: Name
+          Value: VPC-with-cfn
+        - Key: Env
+          Value: Purpose
+
+  InternetGateway:
+    Type: 'AWS::EC2::InternetGateway'
+    Properties:
+      Tags:
+        - Key: Name
+          Value: IGW-with-cfn
+        - Key: Env
+          Value: Purpose
+
+  InternetGatewayAttachment:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+# SUBNETS
+  PublicSubnet1:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: us-east-2a
+      CidrBlock: 10.10.1.0/24
+      MapPublicIpOnLaunch: true
+      Tags: 
+        - Key: Name
+          Value: pub1-with-cfn
+        - Key: Env
+          Value: Purpose
+
+  PublicSubnet2:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: us-east-2b
+      CidrBlock: 10.10.2.0/24
+      MapPublicIpOnLaunch: true
+      Tags: 
+        - Key: Name
+          Value: pub2-with-cfn
+        - Key: Env
+          Value: Purpose
+
+
+#RT
+  PublicRouteTable:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPC
+      Tags: 
+        - Key: Name
+          Value: RT-with-cfn
+        - Key: Env
+          Value: Purpose
+
+#Configuring Public Route
+  PublicRoute:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+#Associating Sub1 
+  PublicSubnet1RouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet1
+
+#Associating Sub2
+  PublicSubnet2RouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet2 
+
+#SG
+  InstanceSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupName: sg-with-cfn
+      GroupDescription: Enable SSH access and HTTP 
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      Tags: 
+        - Key: Name
+          Value: SG-with-cfn
+        - Key: Env
+          Value: Purpose 
+
+#Launch template
+  LaunchTemplate:
+    Type: 'AWS::EC2::LaunchTemplate'
+    Properties:
+      LaunchTemplateName: LaunchTemplate-with-cfn
+      LaunchTemplateData:
+        NetworkInterfaces:
+          - DeviceIndex: 0
+            AssociatePublicIpAddress: yes
+            DeleteOnTermination: yes
+            Groups:
+              - !Ref InstanceSecurityGroup
+        ImageId: ami-09694bfab577e90b0
+        InstanceType: t2.micro
+        KeyName: mac-new
+        UserData:
+          'Fn::Base64': !Sub |
+            #!/bin/bash
+            yum update -y
+            yum install httpd -y
+            echo "home work complete" >> /var/www/html/index.html
+            systemctl start httpd
+            systemctl enable httpd
+      Tags: 
+        - Key: Name
+          Value: LT-with-cfn
+        - Key: Env
+          Value: Purpose
+
+#ASG
+  AutoScalingGroup:
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      MaxSize: '5'
+      MinSize: '2'
+      DesiredCapacity: '3'
+      VPCZoneIdentifier:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      Tags: 
+        - Key: Name
+          Value: ASG-with-cfn
+        - Key: Env
+          Value: Purpose
+
+
+#LB
+  ApplicationLoadBalancer : 
+    Type : 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties :
+      SecurityGroups: 
+        - !Ref InstanceSecurityGroup 
+      Subnets : 
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      Tags: 
+        - Key: Name
+          Value: ALB-with-cfn
+        - Key: Env
+          Value: Purpose
+
+#Configuring Application Load Balancer Target Group 
+  ALBTargetGroup : 
+    Type : 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties : 
+      HealthCheckIntervalSeconds : '20'
+      HealthCheckTimeoutSeconds : '5'
+      Port : '80'
+      Protocol : HTTP
+      VpcId: !Ref VPC
+      Tags: 
+        - Key: Name
+          Value: TG-with-cfn
+        - Key: Env
+          Value: Purpose
+                     
