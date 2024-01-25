@@ -3,12 +3,12 @@ Description: 'AWS CloudFormation Template for RDS MySQL.'
 
 Parameters:
   VpcId: 
-    Description: VPC id 
+    Description: Existing VPC after its creation 
     Type: String
     Default: vpc-02627d93614f7bc15
 
   PubSub1:
-    Description: Subnet Id where instance will create 
+    Description: Existing subnet after its creation
     Type: String
     Default: subnet-0b0c3d3e9b65e32b2
   
