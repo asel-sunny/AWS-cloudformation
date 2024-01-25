@@ -90,7 +90,7 @@ Resources:
   InstanceSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
-      GroupName: sg-with-cfn
+      GroupName: security-with-cfn
       GroupDescription: Enable SSH access and HTTP 
       VpcId: !Ref VPC
       SecurityGroupIngress:
