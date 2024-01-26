@@ -52,25 +52,20 @@ Resources:
         Fn::Base64: |
           #!/bin/bash
 
-          sudo dnf install -y wget httpd php unzip httpd-tools php-cli php-json php-gd php-mbstring php-pdo php-xml php-mysqlnd php-pecl-zip php-common
-          sudo dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-          sudo dnf install -y https://rpms.remirepo.net/enterprise/remi-release-8.rpm
-          sudo yum --enablerepo=remi,remi-8.0
+          sudo dnf install httpd php php-mysqlnd php-fpm php-opcache php-curl php-json php-gd php-xml php-mbstring php-zip -y
           sudo systemctl start httpd
           sudo systemctl enable httpd
 
-          wget https://wordpress.org/latest.zip
-          unzip latest.zip
-          mv wordpress/* /var/www/html/
-          cp /var/www/html/wp-config-sample.php /var/www/html/wp-config.php
+          sudo wget https://wordpress.org/latest.zip
+          sudo unzip latest.zip
+          sudo mv wordpress/* /var/www/html/
+          sudo chown -R apache:apache /var/www/html/
+          sudo cp /var/www/html/wp-config-sample.php /var/www/html/wp-config.php
 
-          sed -i 's/database_name_here/wordpress/g' /var/www/html/wp-config.php
-          sed -i 's/username_here/wordpressuser/g' /var/www/html/wp-config.php
-          sed -i 's/password_here/password/g' /var/www/html/wp-config.php
+          sudo sed -i 's/database_name_here/wordpress/g' /var/www/html/wp-config.php
+          sudo sed -i 's/username_here/wordpressuser/g' /var/www/html/wp-config.php
+          sudo sed -i 's/password_here/password/g' /var/www/html/wp-config.php
           
-          chown -R apache:apache /var/www/html/
-          chcon -R -t httpd_sys_content_t /var/www/html 
-          sed -i 's/Enforcing/disabled/g' /etc/selinux/config
 
 
 
