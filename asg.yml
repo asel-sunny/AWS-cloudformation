@@ -113,6 +113,13 @@ Resources:
     Type: 'AWS::EC2::LaunchTemplate'
     Properties:
       LaunchTemplateName: LaunchTemplate-with-cfn
+      TagSpecifications:
+        - ResourceType: "launch-template"
+          Tags:
+            - Key: Name
+              Value: LT-with-cfn
+            - Key: Env
+              Value: Purpose
       LaunchTemplateData:
         NetworkInterfaces:
           - DeviceIndex: 0
@@ -122,7 +129,7 @@ Resources:
               - !Ref InstanceSecurityGroup
         ImageId: ami-09694bfab577e90b0
         InstanceType: t2.micro
-        KeyName: mac-new
+        KeyName: mac-ohio1
         UserData:
           'Fn::Base64': !Sub |
             #!/bin/bash
@@ -131,11 +138,6 @@ Resources:
             echo "home work complete" >> /var/www/html/index.html
             systemctl start httpd
             systemctl enable httpd
-      Tags: 
-        - Key: Name
-          Value: LT-with-cfn
-        - Key: Env
-          Value: Purpose
 
 #ASG
   AutoScalingGroup:
@@ -153,8 +155,10 @@ Resources:
       Tags: 
         - Key: Name
           Value: ASG-with-cfn
+          PropagateAtLaunch: true
         - Key: Env
           Value: Purpose
+          PropagateAtLaunch: true
 
 
 #LB
